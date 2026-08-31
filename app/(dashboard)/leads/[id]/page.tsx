@@ -1,9 +1,10 @@
-import { getLeadById, getMediaCapturesForLead } from "@/lib/queries";
+import { getLeadById, getMediaCapturesForLead, getMessagesForLead } from "@/lib/queries";
 import { createSignedUrl } from "@/lib/storage";
 import { getMoveQuote } from "@/lib/internal-api";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ChatPanel } from "@/components/chat-panel";
 
 export default async function LeadDetailPage({
   params,
@@ -17,9 +18,10 @@ export default async function LeadDetailPage({
     notFound();
   }
 
-  const [captures, quote] = await Promise.all([
+  const [captures, quote, messages] = await Promise.all([
     getMediaCapturesForLead(id),
     getMoveQuote(id),
+    getMessagesForLead(id),
   ]);
 
   const capturesWithUrls = await Promise.all(
@@ -48,6 +50,12 @@ export default async function LeadDetailPage({
           {lead.human_takeover && <div><Badge variant="secondary">Human Takeover Active</Badge></div>}
         </CardContent>
       </Card>
+
+      <ChatPanel
+        leadId={id}
+        initialMessages={messages}
+        initialHumanTakeover={lead.human_takeover}
+      />
 
       <Card>
         <CardHeader>

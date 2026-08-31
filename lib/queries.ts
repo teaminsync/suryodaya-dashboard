@@ -74,3 +74,25 @@ export async function getMediaCapturesForLead(leadId: string): Promise<MediaCapt
     ORDER BY created_at ASC
   `;
 }
+
+export interface MessageItem {
+  id: string;
+  lead_id: string;
+  wamid: string | null;
+  direction: "inbound" | "outbound";
+  sender_type: "customer" | "ai" | "system" | "human";
+  message_type: "text" | "image" | "video" | "interactive" | "list";
+  body: string | null;
+  media_capture_id: string | null;
+  created_at: string;
+}
+
+export async function getMessagesForLead(leadId: string): Promise<MessageItem[]> {
+  return sql<MessageItem[]>`
+    SELECT id, lead_id, wamid, direction, sender_type, message_type, body,
+           media_capture_id, created_at
+    FROM messages
+    WHERE lead_id = ${leadId}
+    ORDER BY created_at ASC
+  `;
+}

@@ -1,9 +1,11 @@
-import { getLeadById, getMediaCapturesForLead, getMessagesForLead } from "@/lib/queries";
+import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, type EnquirySummary } from "@/lib/queries";
 import { createSignedUrl } from "@/lib/storage";
 import { getMoveQuote } from "@/lib/internal-api";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SourceBadge } from "@/components/source-badge";
 import { ChatPanel } from "@/components/chat-panel";
 
 export default async function LeadDetailPage({
@@ -18,10 +20,21 @@ export default async function LeadDetailPage({
     notFound();
   }
 
-  const [captures, quote, messages] = await Promise.all([
+  let contact: Awaited<ReturnType<typeof getContactById>> | undefined;
+  let contactEnquiries: EnquirySummary[] = [];
+
+  if (lead.contact_id) {
+    [contact, contactEnquiries] = await Promise.all([
+      getContactById(lead.contact_id),
+      getEnquiriesForContact(lead.contact_id),
+    ]);
+  }
+
+  const [captures, quote, messages, touchpoints] = await Promise.all([
     getMediaCapturesForLead(id),
     getMoveQuote(id),
     getMessagesForLead(id),
+    getTouchpointsForLead(id),
   ]);
 
   const capturesWithUrls = await Promise.all(
@@ -48,6 +61,46 @@ export default async function LeadDetailPage({
           <div><strong>Packing needed:</strong> {lead.requires_packing ? "Yes" : "No"}</div>
           {lead.escalated && <div><Badge variant="destructive">Escalated</Badge></div>}
           {lead.human_takeover && <div><Badge variant="secondary">Human Takeover Active</Badge></div>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contact</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Name:</strong> {contact?.display_name || lead.contact_name || "Unknown"}</div>
+            <div><strong>Phone:</strong> {contact?.phone_e164 || "-"}</div>
+            <div><strong>Source:</strong> <SourceBadge source={lead.source} /></div>
+          </div>
+          {contactEnquiries.length > 1 && (
+            <div>
+              <h4 className="font-semibold text-sm mb-2">All enquiries from this contact</h4>
+              <div className="space-y-2">
+                {contactEnquiries.map((enquiry) => (
+                  <div key={enquiry.id} className="text-sm border-l-2 pl-3 py-1">
+                    {enquiry.id === id ? (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">Current</Badge>
+                        <Badge>{enquiry.status}</Badge>
+                        <SourceBadge source={enquiry.source} />
+                        <span>{enquiry.origin ? `${enquiry.origin} -> ${enquiry.destination || "?"}` : "-"}</span>
+                        <span className="text-gray-500">{new Date(enquiry.created_at).toLocaleDateString()}</span>
+                      </div>
+                    ) : (
+                      <Link href={`/leads/${enquiry.id}`} className="flex items-center gap-2 hover:text-blue-600">
+                        <Badge>{enquiry.status}</Badge>
+                        <SourceBadge source={enquiry.source} />
+                        <span>{enquiry.origin ? `${enquiry.origin} -> ${enquiry.destination || "?"}` : "-"}</span>
+                        <span className="text-gray-500">{new Date(enquiry.created_at).toLocaleDateString()}</span>
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -101,6 +154,26 @@ export default async function LeadDetailPage({
           ))}
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Touchpoints</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {touchpoints.length > 0 ? (
+            <div className="space-y-2">
+              {touchpoints.map((touchpoint) => (
+                <div key={touchpoint.id} className="text-sm flex items-center gap-2">
+                  <SourceBadge source={touchpoint.source} />
+                  <span className="text-gray-500">{new Date(touchpoint.received_at).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">No touchpoints recorded.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

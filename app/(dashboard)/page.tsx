@@ -1,6 +1,7 @@
 import { getLeads } from "@/lib/queries";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { SourceBadge } from "@/components/source-badge";
 import {
   Table,
   TableBody,
@@ -15,13 +16,14 @@ export default async function LeadsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Leads ({leads.length})</h2>
+      <h2 className="text-2xl font-bold mb-4">Enquiries ({leads.length})</h2>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Contact</TableHead>
             <TableHead>WhatsApp Number</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Source</TableHead>
             <TableHead>Move</TableHead>
             <TableHead>Flags</TableHead>
             <TableHead>Created</TableHead>
@@ -32,11 +34,17 @@ export default async function LeadsPage() {
             <TableRow key={lead.id}>
               <TableCell>
                 <Link href={`/leads/${lead.id}`} className="text-blue-600 hover:underline">
-                  {lead.contact_name || "Unknown"}
+                  {lead.contact_display_name || lead.contact_name || "Unknown"}
                 </Link>
+                {lead.contact_enquiry_count > 1 && (
+                  <div className="text-xs text-gray-500">
+                    {lead.contact_enquiry_count} enquiries from this contact
+                  </div>
+                )}
               </TableCell>
               <TableCell>{lead.whatsapp_number}</TableCell>
               <TableCell><Badge>{lead.status}</Badge></TableCell>
+              <TableCell><SourceBadge source={lead.source} /></TableCell>
               <TableCell>
                 {lead.move_type
                   ? `${lead.move_type}${lead.origin ? ` (${lead.origin} -> ${lead.destination || "?"})` : ""}`

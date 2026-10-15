@@ -11,14 +11,22 @@ export interface LeadListItem {
   escalated: boolean;
   human_takeover: boolean;
   created_at: string;
+  source: string | null;
+  contact_id: string | null;
+  contact_display_name: string | null;
+  contact_phone_e164: string | null;
+  contact_enquiry_count: number;
 }
 
 export async function getLeads(): Promise<LeadListItem[]> {
   return sql<LeadListItem[]>`
-    SELECT id, whatsapp_number, contact_name, status, move_type, origin,
-           destination, escalated, human_takeover, created_at
-    FROM leads
-    ORDER BY created_at DESC
+    SELECT l.id, l.whatsapp_number, l.contact_name, l.status, l.move_type, l.origin,
+           l.destination, l.escalated, l.human_takeover, l.created_at, l.source, l.contact_id,
+           c.display_name AS contact_display_name, c.phone_e164 AS contact_phone_e164,
+           (SELECT count(*)::int FROM leads l2 WHERE l2.contact_id IS NOT NULL AND l2.contact_id = l.contact_id) AS contact_enquiry_count
+    FROM leads l
+    LEFT JOIN contacts c ON c.id = l.contact_id
+    ORDER BY l.created_at DESC
   `;
 }
 
@@ -41,6 +49,10 @@ export interface LeadDetail {
   raw_enquiry_text: string | null;
   created_at: string;
   updated_at: string;
+  source: string | null;
+  contact_id: string | null;
+  closed_at: string | null;
+  closed_reason: string | null;
 }
 
 export async function getLeadById(id: string): Promise<LeadDetail | undefined> {
@@ -94,5 +106,52 @@ export async function getMessagesForLead(leadId: string): Promise<MessageItem[]>
     FROM messages
     WHERE lead_id = ${leadId}
     ORDER BY created_at ASC
+  `;
+}
+
+export interface EnquirySummary {
+  id: string;
+  status: string;
+  source: string | null;
+  move_type: string | null;
+  origin: string | null;
+  destination: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getEnquiriesForContact(contactId: string): Promise<EnquirySummary[]> {
+  return sql<EnquirySummary[]>`
+    SELECT id, status, source, move_type, origin, destination, created_at, updated_at
+    FROM leads
+    WHERE contact_id = ${contactId}
+    ORDER BY created_at DESC
+  `;
+}
+
+export interface ContactInfo {
+  id: string;
+  phone_e164: string | null;
+  display_name: string | null;
+}
+
+export async function getContactById(id: string): Promise<ContactInfo | undefined> {
+  const result = await sql<ContactInfo[]>`SELECT id, phone_e164, display_name FROM contacts WHERE id = ${id}`;
+  return result[0];
+}
+
+export interface TouchpointItem {
+  id: string;
+  source: string;
+  external_ref: string | null;
+  received_at: string;
+}
+
+export async function getTouchpointsForLead(leadId: string): Promise<TouchpointItem[]> {
+  return sql<TouchpointItem[]>`
+    SELECT id, source, external_ref, received_at
+    FROM touchpoints
+    WHERE lead_id = ${leadId}
+    ORDER BY received_at ASC
   `;
 }

@@ -1,12 +1,13 @@
 import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, type EnquirySummary } from "@/lib/queries";
 import { createSignedUrl } from "@/lib/storage";
-import { getMoveQuote } from "@/lib/internal-api";
+import { getMoveQuote, getOutreach } from "@/lib/internal-api";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SourceBadge } from "@/components/source-badge";
 import { ChatPanel } from "@/components/chat-panel";
+import { OutreachPanel } from "@/components/outreach-panel";
 
 export default async function LeadDetailPage({
   params,
@@ -30,9 +31,10 @@ export default async function LeadDetailPage({
     ]);
   }
 
-  const [captures, quote, messages, touchpoints] = await Promise.all([
+  const [captures, quote, outreach, messages, touchpoints] = await Promise.all([
     getMediaCapturesForLead(id),
     getMoveQuote(id),
+    getOutreach(id),
     getMessagesForLead(id),
     getTouchpointsForLead(id),
   ]);
@@ -61,6 +63,11 @@ export default async function LeadDetailPage({
           <div><strong>Packing needed:</strong> {lead.requires_packing ? "Yes" : "No"}</div>
           {lead.escalated && <div><Badge variant="destructive">Escalated</Badge></div>}
           {lead.human_takeover && <div><Badge variant="secondary">Human Takeover Active</Badge></div>}
+          {lead.closed_at && (
+            <div className="col-span-2 text-sm text-gray-600">
+              Closed on {new Date(lead.closed_at).toLocaleString()}: {lead.closed_reason === "declined_followup" ? "customer declined the follow-up" : (lead.closed_reason || "closed")}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -104,6 +111,21 @@ export default async function LeadDetailPage({
         </CardContent>
       </Card>
 
+      <OutreachPanel
+        leadId={id}
+        leadLabel={contact?.display_name || lead.contact_name || "this customer"}
+        outreach={outreach ? {
+          status: outreach.status,
+          capabilities: outreach.capabilities,
+          history: outreach.history.map((item) => ({
+            status: item.status,
+            source: item.source,
+            wording: item.wording,
+            when: new Date(item.captured_at).toLocaleString(),
+          })),
+        } : null}
+      />
+
       <ChatPanel
         leadId={id}
         initialMessages={messages}
@@ -131,7 +153,6 @@ export default async function LeadDetailPage({
               <CardContent className="pt-4">
                 {capture.signedUrl ? (
                   capture.media_type === "video" ? (
-                    // eslint-disable-next-line jsx-a11y/media-has-caption
                     <video src={capture.signedUrl} controls className="w-full rounded mb-2" />
                   ) : (
                     // Deliberately a plain img tag, not next/image - these are

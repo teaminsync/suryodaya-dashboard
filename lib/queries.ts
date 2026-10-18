@@ -16,6 +16,9 @@ export interface LeadListItem {
   contact_display_name: string | null;
   contact_phone_e164: string | null;
   contact_enquiry_count: number;
+  opted_out: boolean;
+  closed_at: string | null;
+  closed_reason: string | null;
 }
 
 export async function getLeads(): Promise<LeadListItem[]> {
@@ -23,7 +26,9 @@ export async function getLeads(): Promise<LeadListItem[]> {
     SELECT l.id, l.whatsapp_number, l.contact_name, l.status, l.move_type, l.origin,
            l.destination, l.escalated, l.human_takeover, l.created_at, l.source, l.contact_id,
            c.display_name AS contact_display_name, c.phone_e164 AS contact_phone_e164,
-           (SELECT count(*)::int FROM leads l2 WHERE l2.contact_id IS NOT NULL AND l2.contact_id = l.contact_id) AS contact_enquiry_count
+           (SELECT count(*)::int FROM leads l2 WHERE l2.contact_id IS NOT NULL AND l2.contact_id = l.contact_id) AS contact_enquiry_count,
+           l.closed_at, l.closed_reason,
+           COALESCE((SELECT cs.status = 'withdrawn' FROM consents cs WHERE cs.contact_id = l.contact_id AND cs.channel = 'whatsapp' AND cs.scope = 'follow_up' AND cs.status IN ('granted', 'withdrawn') ORDER BY cs.captured_at DESC, cs.created_at DESC LIMIT 1), false) AS opted_out
     FROM leads l
     LEFT JOIN contacts c ON c.id = l.contact_id
     ORDER BY l.created_at DESC

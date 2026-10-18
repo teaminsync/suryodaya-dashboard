@@ -21,7 +21,7 @@ export default async function LeadsPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Contact</TableHead>
-            <TableHead>WhatsApp Number</TableHead>
+            <TableHead>Phone</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Source</TableHead>
             <TableHead>Move</TableHead>
@@ -53,6 +53,9 @@ export default async function LeadsPage() {
               <TableCell className="space-x-1">
                 {lead.escalated && <Badge variant="destructive">Escalated</Badge>}
                 {lead.human_takeover && <Badge variant="secondary">Human Active</Badge>}
+                {lead.opted_out && <Badge variant="destructive">Opted out</Badge>}
+                {lead.closed_reason === "declined_followup" && <Badge variant="secondary">Declined</Badge>}
+                {lead.closed_at && lead.closed_reason !== "declined_followup" && <Badge variant="secondary">Closed</Badge>}
               </TableCell>
               <TableCell>{new Date(lead.created_at).toLocaleString()}</TableCell>
             </TableRow>

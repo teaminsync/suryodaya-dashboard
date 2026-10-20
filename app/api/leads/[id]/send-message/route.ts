@@ -58,6 +58,24 @@ export async function POST(
   );
 
   if (!sendResponse.ok) {
+    if (sendResponse.status >= 400 && sendResponse.status <= 499) {
+      try {
+        const errorData = await sendResponse.json();
+        const response: { error?: string; message?: string } = {};
+        if (typeof errorData.error === "string") {
+          response.error = errorData.error;
+        }
+        if (typeof errorData.message === "string") {
+          response.message = errorData.message;
+        }
+        return NextResponse.json(response, { status: sendResponse.status });
+      } catch {
+        return NextResponse.json(
+          { error: "Failed to send message" },
+          { status: 502 }
+        );
+      }
+    }
     return NextResponse.json(
       { error: "Failed to send message" },
       { status: 502 }

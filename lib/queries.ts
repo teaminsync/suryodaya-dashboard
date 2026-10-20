@@ -101,13 +101,14 @@ export interface MessageItem {
   message_type: "text" | "image" | "video" | "interactive" | "list";
   body: string | null;
   media_capture_id: string | null;
+  channel: string;
   created_at: string;
 }
 
 export async function getMessagesForLead(leadId: string): Promise<MessageItem[]> {
   return sql<MessageItem[]>`
     SELECT id, lead_id, wamid, direction, sender_type, message_type, body,
-           media_capture_id, created_at
+           media_capture_id, channel, created_at
     FROM messages
     WHERE lead_id = ${leadId}
     ORDER BY created_at ASC

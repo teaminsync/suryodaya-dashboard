@@ -23,6 +23,7 @@ export function ChatPanel({
   const [humanTakeover, setHumanTakeover] = useState(initialHumanTakeover);
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +98,7 @@ export function ChatPanel({
     if (!inputText.trim() || sending) return;
 
     setSending(true);
+    setSendError(null);
     try {
       const response = await fetch(`/api/leads/${leadId}/send-message`, {
         method: "POST",
@@ -107,6 +109,10 @@ export function ChatPanel({
       if (response.ok) {
         setInputText("");
         setHumanTakeover(true); // send-message always enables takeover server-side
+      } else {
+        const data = await response.json().catch(() => ({}));
+        const errorText = data.message || data.error || "Failed to send message";
+        setSendError(errorText);
       }
     } finally {
       setSending(false);
@@ -179,12 +185,17 @@ export function ChatPanel({
                 <p className="text-xs font-medium text-gray-500 mb-1">
                   {senderLabel(m)}
                 </p>
-                <p>{messageBody(m)}</p>
+                <p className="whitespace-pre-wrap">{messageBody(m)}</p>
               </div>
             </div>
           ))}
           <div ref={scrollRef} />
         </ScrollArea>
+        {sendError && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {sendError}
+          </div>
+        )}
         <div className="flex gap-2">
           <Textarea
             value={inputText}

@@ -34,7 +34,7 @@ export default async function LeadsPage() {
             <TableRow key={lead.id}>
               <TableCell>
                 <Link href={`/leads/${lead.id}`} className="text-blue-600 hover:underline">
-                  {lead.contact_display_name || lead.contact_name || "Unknown"}
+                  {lead.contact_display_name || lead.contact_name || (lead.source === "instagram" ? "Instagram user" : "Unknown")}
                 </Link>
                 {lead.contact_enquiry_count > 1 && (
                   <div className="text-xs text-gray-500">
@@ -42,7 +42,7 @@ export default async function LeadsPage() {
                   </div>
                 )}
               </TableCell>
-              <TableCell>{lead.whatsapp_number}</TableCell>
+              <TableCell>{lead.source === "instagram" ? "-" : lead.whatsapp_number}</TableCell>
               <TableCell><Badge>{lead.status}</Badge></TableCell>
               <TableCell><SourceBadge source={lead.source} /></TableCell>
               <TableCell>

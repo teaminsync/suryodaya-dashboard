@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { SourceBadge } from "@/components/source-badge";
 import { ChatPanel } from "@/components/chat-panel";
 import { OutreachPanel } from "@/components/outreach-panel";
+import { InstagramNote } from "@/components/instagram-note";
 
 export default async function LeadDetailPage({
   params,
@@ -34,10 +35,33 @@ export default async function LeadDetailPage({
   const [captures, quote, outreach, messages, touchpoints] = await Promise.all([
     getMediaCapturesForLead(id),
     getMoveQuote(id),
-    getOutreach(id),
+    lead.source === "instagram" ? Promise.resolve(null) : getOutreach(id),
     getMessagesForLead(id),
     getTouchpointsForLead(id),
   ]);
+
+  let instagramWindowOpen = false;
+  let instagramWindowEndsAtLabel: string | null = null;
+
+  if (lead.source === "instagram") {
+    const instagramInboundTimes = messages
+      .filter((m) => m.direction === "inbound" && m.channel === "instagram")
+      .map((m) => new Date(m.created_at).getTime())
+      .filter((t) => !isNaN(t));
+    
+    if (instagramInboundTimes.length > 0) {
+      const lastCustomerMessageTime = Math.max(...instagramInboundTimes);
+      // eslint-disable-next-line react-hooks/purity
+      const now = Date.now();
+      const elapsed = now - lastCustomerMessageTime;
+      instagramWindowOpen = elapsed <= 24 * 60 * 60 * 1000;
+      if (instagramWindowOpen) {
+        instagramWindowEndsAtLabel = new Date(
+          lastCustomerMessageTime + 24 * 60 * 60 * 1000
+        ).toLocaleString();
+      }
+    }
+  }
 
   const capturesWithUrls = await Promise.all(
     captures.map(async (capture) => ({
@@ -52,7 +76,11 @@ export default async function LeadDetailPage({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>{lead.contact_name || "Unknown"} - {lead.whatsapp_number}</CardTitle>
+          <CardTitle>
+            {lead.source === "instagram"
+              ? (contact?.display_name || (lead.contact_name && lead.contact_name !== "Unknown" ? lead.contact_name : "Instagram user"))
+              : `${lead.contact_name || "Unknown"} - ${lead.whatsapp_number}`}
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 text-sm">
           <div><strong>Status:</strong> <Badge>{lead.status}</Badge></div>
@@ -111,20 +139,27 @@ export default async function LeadDetailPage({
         </CardContent>
       </Card>
 
-      <OutreachPanel
-        leadId={id}
-        leadLabel={contact?.display_name || lead.contact_name || "this customer"}
-        outreach={outreach ? {
-          status: outreach.status,
-          capabilities: outreach.capabilities,
-          history: outreach.history.map((item) => ({
-            status: item.status,
-            source: item.source,
-            wording: item.wording,
-            when: new Date(item.captured_at).toLocaleString(),
-          })),
-        } : null}
-      />
+      {lead.source === "instagram" ? (
+        <InstagramNote
+          windowEndsAtLabel={instagramWindowEndsAtLabel}
+          windowOpen={instagramWindowOpen}
+        />
+      ) : (
+        <OutreachPanel
+          leadId={id}
+          leadLabel={contact?.display_name || lead.contact_name || "this customer"}
+          outreach={outreach ? {
+            status: outreach.status,
+            capabilities: outreach.capabilities,
+            history: outreach.history.map((item) => ({
+              status: item.status,
+              source: item.source,
+              wording: item.wording,
+              when: new Date(item.captured_at).toLocaleString(),
+            })),
+          } : null}
+        />
+      )}
 
       <ChatPanel
         leadId={id}

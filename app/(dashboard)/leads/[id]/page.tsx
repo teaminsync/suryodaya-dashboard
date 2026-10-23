@@ -1,6 +1,7 @@
 import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, type EnquirySummary } from "@/lib/queries";
 import { createSignedUrl } from "@/lib/storage";
 import { getMoveQuote, getOutreach } from "@/lib/internal-api";
+import { contactLabel } from "@/lib/contact-label";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,14 +73,28 @@ export default async function LeadDetailPage({
     }))
   );
 
+  const headerLabel = contactLabel({
+    source: lead.source,
+    display_name: contact?.display_name ?? null,
+    instagram_username: contact?.instagram_username ?? null,
+    contact_name: lead.contact_name,
+  });
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>
-            {lead.source === "instagram"
-              ? (contact?.display_name || (lead.contact_name && lead.contact_name !== "Unknown" ? lead.contact_name : "Instagram user"))
-              : `${lead.contact_name || "Unknown"} - ${lead.whatsapp_number}`}
+            {lead.source === "instagram" ? (
+              <span>
+                {headerLabel.primary}
+                {headerLabel.secondary && (
+                  <span className="text-sm text-gray-500 ml-2">{headerLabel.secondary}</span>
+                )}
+              </span>
+            ) : (
+              `${lead.contact_name || "Unknown"} - ${lead.whatsapp_number}`
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 text-sm">
@@ -106,6 +121,19 @@ export default async function LeadDetailPage({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div><strong>Name:</strong> {contact?.display_name || lead.contact_name || "Unknown"}</div>
+            {lead.source === "instagram" && contact?.instagram_username && (
+              <div>
+                <strong>Instagram:</strong>{" "}
+                <a
+                  href={`https://instagram.com/${contact.instagram_username.startsWith("@") ? contact.instagram_username.slice(1) : contact.instagram_username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  @{contact.instagram_username.startsWith("@") ? contact.instagram_username.slice(1) : contact.instagram_username}
+                </a>
+              </div>
+            )}
             <div><strong>Phone:</strong> {contact?.phone_e164 || "-"}</div>
             <div><strong>Source:</strong> <SourceBadge source={lead.source} /></div>
           </div>

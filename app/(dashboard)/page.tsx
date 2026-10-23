@@ -1,4 +1,5 @@
 import { getLeads } from "@/lib/queries";
+import { contactLabel } from "@/lib/contact-label";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { SourceBadge } from "@/components/source-badge";
@@ -30,36 +31,47 @@ export default async function LeadsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {leads.map((lead) => (
-            <TableRow key={lead.id}>
-              <TableCell>
-                <Link href={`/leads/${lead.id}`} className="text-blue-600 hover:underline">
-                  {lead.contact_display_name || lead.contact_name || (lead.source === "instagram" ? "Instagram user" : "Unknown")}
-                </Link>
-                {lead.contact_enquiry_count > 1 && (
-                  <div className="text-xs text-gray-500">
-                    {lead.contact_enquiry_count} enquiries from this contact
-                  </div>
-                )}
-              </TableCell>
-              <TableCell>{lead.source === "instagram" ? "-" : lead.whatsapp_number}</TableCell>
-              <TableCell><Badge>{lead.status}</Badge></TableCell>
-              <TableCell><SourceBadge source={lead.source} /></TableCell>
-              <TableCell>
-                {lead.move_type
-                  ? `${lead.move_type}${lead.origin ? ` (${lead.origin} -> ${lead.destination || "?"})` : ""}`
-                  : "-"}
-              </TableCell>
-              <TableCell className="space-x-1">
-                {lead.escalated && <Badge variant="destructive">Escalated</Badge>}
-                {lead.human_takeover && <Badge variant="secondary">Human Active</Badge>}
-                {lead.opted_out && <Badge variant="destructive">Opted out</Badge>}
-                {lead.closed_reason === "declined_followup" && <Badge variant="secondary">Declined</Badge>}
-                {lead.closed_at && lead.closed_reason !== "declined_followup" && <Badge variant="secondary">Closed</Badge>}
-              </TableCell>
-              <TableCell>{new Date(lead.created_at).toLocaleString()}</TableCell>
-            </TableRow>
-          ))}
+          {leads.map((lead) => {
+            const label = contactLabel({
+              source: lead.source,
+              display_name: lead.contact_display_name,
+              instagram_username: lead.contact_instagram_username,
+              contact_name: lead.contact_name,
+            });
+            return (
+              <TableRow key={lead.id}>
+                <TableCell>
+                  <Link href={`/leads/${lead.id}`} className="text-blue-600 hover:underline">
+                    {label.primary}
+                  </Link>
+                  {label.secondary && (
+                    <div className="text-xs text-gray-500">{label.secondary}</div>
+                  )}
+                  {lead.contact_enquiry_count > 1 && (
+                    <div className="text-xs text-gray-500">
+                      {lead.contact_enquiry_count} enquiries from this contact
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>{lead.source === "instagram" ? "-" : lead.whatsapp_number}</TableCell>
+                <TableCell><Badge>{lead.status}</Badge></TableCell>
+                <TableCell><SourceBadge source={lead.source} /></TableCell>
+                <TableCell>
+                  {lead.move_type
+                    ? `${lead.move_type}${lead.origin ? ` (${lead.origin} -> ${lead.destination || "?"})` : ""}`
+                    : "-"}
+                </TableCell>
+                <TableCell className="space-x-1">
+                  {lead.escalated && <Badge variant="destructive">Escalated</Badge>}
+                  {lead.human_takeover && <Badge variant="secondary">Human Active</Badge>}
+                  {lead.opted_out && <Badge variant="destructive">Opted out</Badge>}
+                  {lead.closed_reason === "declined_followup" && <Badge variant="secondary">Declined</Badge>}
+                  {lead.closed_at && lead.closed_reason !== "declined_followup" && <Badge variant="secondary">Closed</Badge>}
+                </TableCell>
+                <TableCell>{new Date(lead.created_at).toLocaleString()}</TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

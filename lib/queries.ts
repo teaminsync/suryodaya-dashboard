@@ -19,6 +19,7 @@ export interface LeadListItem {
   opted_out: boolean;
   closed_at: string | null;
   closed_reason: string | null;
+  contact_instagram_username: string | null;
 }
 
 export async function getLeads(): Promise<LeadListItem[]> {
@@ -26,6 +27,7 @@ export async function getLeads(): Promise<LeadListItem[]> {
     SELECT l.id, l.whatsapp_number, l.contact_name, l.status, l.move_type, l.origin,
            l.destination, l.escalated, l.human_takeover, l.created_at, l.source, l.contact_id,
            c.display_name AS contact_display_name, c.phone_e164 AS contact_phone_e164,
+           c.instagram_username AS contact_instagram_username,
            (SELECT count(*)::int FROM leads l2 WHERE l2.contact_id IS NOT NULL AND l2.contact_id = l.contact_id) AS contact_enquiry_count,
            l.closed_at, l.closed_reason,
            COALESCE((SELECT cs.status = 'withdrawn' FROM consents cs WHERE cs.contact_id = l.contact_id AND cs.channel = 'whatsapp' AND cs.scope = 'follow_up' AND cs.status IN ('granted', 'withdrawn') ORDER BY cs.captured_at DESC, cs.created_at DESC LIMIT 1), false) AS opted_out
@@ -139,10 +141,11 @@ export interface ContactInfo {
   id: string;
   phone_e164: string | null;
   display_name: string | null;
+  instagram_username: string | null;
 }
 
 export async function getContactById(id: string): Promise<ContactInfo | undefined> {
-  const result = await sql<ContactInfo[]>`SELECT id, phone_e164, display_name FROM contacts WHERE id = ${id}`;
+  const result = await sql<ContactInfo[]>`SELECT id, phone_e164, display_name, instagram_username FROM contacts WHERE id = ${id}`;
   return result[0];
 }
 

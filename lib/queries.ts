@@ -20,6 +20,8 @@ export interface LeadListItem {
   closed_at: string | null;
   closed_reason: string | null;
   contact_instagram_username: string | null;
+  last_direction: "inbound" | "outbound" | null;
+  last_message_at: string | null;
 }
 
 export async function getLeads(): Promise<LeadListItem[]> {
@@ -30,10 +32,19 @@ export async function getLeads(): Promise<LeadListItem[]> {
            c.instagram_username AS contact_instagram_username,
            (SELECT count(*)::int FROM leads l2 WHERE l2.contact_id IS NOT NULL AND l2.contact_id = l.contact_id) AS contact_enquiry_count,
            l.closed_at, l.closed_reason,
-           COALESCE((SELECT cs.status = 'withdrawn' FROM consents cs WHERE cs.contact_id = l.contact_id AND cs.channel = 'whatsapp' AND cs.scope = 'follow_up' AND cs.status IN ('granted', 'withdrawn') ORDER BY cs.captured_at DESC, cs.created_at DESC LIMIT 1), false) AS opted_out
+           COALESCE((SELECT cs.status = 'withdrawn' FROM consents cs WHERE cs.contact_id = l.contact_id AND cs.channel = 'whatsapp' AND cs.scope = 'follow_up' AND cs.status IN ('granted', 'withdrawn') ORDER BY cs.captured_at DESC, cs.created_at DESC LIMIT 1), false) AS opted_out,
+           lm.last_direction, lm.last_message_at
     FROM leads l
     LEFT JOIN contacts c ON c.id = l.contact_id
-    ORDER BY l.created_at DESC
+    LEFT JOIN LATERAL (
+      SELECT m.direction AS last_direction, m.created_at AS last_message_at
+      FROM messages m
+      WHERE m.lead_id = l.id
+      ORDER BY m.created_at DESC
+      LIMIT 1
+    ) lm ON true
+    ORDER BY COALESCE(lm.last_message_at, l.created_at) DESC
+    LIMIT 500
   `;
 }
 

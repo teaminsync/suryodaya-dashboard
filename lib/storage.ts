@@ -29,10 +29,6 @@ export async function createSignedUrl(
     }
 
     const data = await response.json();
-    console.debug("[Storage] Signed URL response shape:", JSON.stringify(data));
-    // data.signedURL is expected to be a relative path with a token query
-    // param - VERIFY this against the actual response (the debug log above)
-    // rather than assuming, then prefix with the storage base URL.
     return `${supabaseUrl}/storage/v1${data.signedURL}`;
   } catch (error) {
     console.error("[Storage] Signed URL request failed:", error);

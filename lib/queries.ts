@@ -74,6 +74,8 @@ export interface MediaCaptureItem {
   storage_path: string | null;
   asset_type: string | null;
   suggested_room_label: string | null;
+  room_key: string | null;
+  room_qualifier: string | null;
   items: string;
   total_estimated_cubic_feet: number;
   total_estimated_weight_kg: number;
@@ -86,7 +88,7 @@ export interface MediaCaptureItem {
 export async function getMediaCapturesForLead(leadId: string): Promise<MediaCaptureItem[]> {
   return sql<MediaCaptureItem[]>`
     SELECT id, wamid, media_type, storage_path, asset_type, suggested_room_label,
-           items, total_estimated_cubic_feet, total_estimated_weight_kg,
+           room_key, room_qualifier, items, total_estimated_cubic_feet, total_estimated_weight_kg,
            packing_complexity, special_handling_notes, confidence, created_at
     FROM media_captures
     WHERE lead_id = ${leadId}

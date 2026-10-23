@@ -10,6 +10,7 @@ import { SourceBadge } from "@/components/source-badge";
 import { ChatPanel } from "@/components/chat-panel";
 import { OutreachPanel } from "@/components/outreach-panel";
 import { InstagramNote } from "@/components/instagram-note";
+import { CaptureGroups } from "@/components/capture-groups";
 
 export default async function LeadDetailPage({
   params,
@@ -210,33 +211,7 @@ export default async function LeadDetailPage({
 
       <div>
         <h3 className="text-lg font-semibold mb-3">Captures ({capturesWithUrls.length})</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {capturesWithUrls.map((capture) => (
-            <Card key={capture.id}>
-              <CardContent className="pt-4">
-                {capture.signedUrl ? (
-                  capture.media_type === "video" ? (
-                    <video src={capture.signedUrl} controls className="w-full rounded mb-2" />
-                  ) : (
-                    // Deliberately a plain img tag, not next/image - these are
-                    // short-lived signed URLs from a dynamic external domain,
-                    // which next/image's optimizer isn't a good fit for here.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={capture.signedUrl} alt="Room capture" className="w-full rounded mb-2" />
-                  )
-                ) : (
-                  <div className="bg-gray-100 h-40 flex items-center justify-center rounded mb-2 text-sm text-gray-500">
-                    Media unavailable
-                  </div>
-                )}
-                <p className="text-sm font-medium">{capture.suggested_room_label || "Unlabeled"}</p>
-                <p className="text-xs text-gray-500">
-                  {capture.total_estimated_cubic_feet} cu ft, {capture.total_estimated_weight_kg} kg
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <CaptureGroups captures={capturesWithUrls} />
       </div>
 
       <Card>

@@ -31,12 +31,12 @@ Install dependencies:
 npm install
 ```
 
-Run the development server (Next.js default port 3000 unless you pass -p):
+Run the development server:
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3001](http://localhost:3001). The dashboard runs on port 3001 (the Express server uses port 3000). When running locally, set `DASHBOARD_BASE_URL=http://localhost:3001` in the Express `.env` file.
 
 ## Build and Test
 

@@ -1,4 +1,4 @@
-import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, getAdminAlertsForLead, type EnquirySummary } from "@/lib/queries";
+import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, getAdminAlertsForLead, getSurveyForLead, type EnquirySummary } from "@/lib/queries";
 import { createSignedUrl } from "@/lib/storage";
 import { getMoveQuote, getOutreach } from "@/lib/internal-api";
 import { contactLabel } from "@/lib/contact-label";
@@ -12,6 +12,7 @@ import { OutreachPanel } from "@/components/outreach-panel";
 import { InstagramNote } from "@/components/instagram-note";
 import { CaptureGroups } from "@/components/capture-groups";
 import { AdminAlerts } from "@/components/admin-alerts";
+import { SurveyCard } from "@/components/survey-card";
 
 export default async function LeadDetailPage({
   params,
@@ -35,13 +36,14 @@ export default async function LeadDetailPage({
     ]);
   }
 
-  const [captures, quote, outreach, messages, touchpoints, alerts] = await Promise.all([
+  const [captures, quote, outreach, messages, touchpoints, alerts, survey] = await Promise.all([
     getMediaCapturesForLead(id),
     getMoveQuote(id),
     lead.source === "instagram" ? Promise.resolve(null) : getOutreach(id),
     getMessagesForLead(id),
     getTouchpointsForLead(id),
     getAdminAlertsForLead(id),
+    getSurveyForLead(id),
   ]);
 
   let instagramWindowOpen = false;
@@ -210,6 +212,8 @@ export default async function LeadDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {survey && <SurveyCard survey={survey} />}
 
       <AdminAlerts alerts={alerts} />
 

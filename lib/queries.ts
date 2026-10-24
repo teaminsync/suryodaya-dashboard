@@ -203,3 +203,79 @@ export async function getAdminAlertsForLead(leadId: string): Promise<AdminAlertR
     throw error;
   }
 }
+
+export interface SurveyRow {
+  id: string;
+  lead_id: string;
+  survey_starts_at: string | Date;
+  survey_ends_at: string | Date | null;
+  calendar_status: string | null;
+  calendar_event_link: string | null;
+  source: string | null;
+  contact_name: string | null;
+  origin: string | null;
+  destination: string | null;
+  move_type: string | null;
+  estimated_volume: string | null;
+  whatsapp_number: string;
+  contact_display_name: string | null;
+  contact_instagram_username: string | null;
+  contact_phone_e164: string | null;
+}
+
+export async function getUpcomingSurveys(): Promise<SurveyRow[]> {
+  try {
+    return await sql<SurveyRow[]>`
+      SELECT * FROM (
+        SELECT DISTINCT ON (bo.lead_id)
+          bo.id, bo.lead_id, bo.survey_starts_at, bo.survey_ends_at,
+          bo.calendar_status, bo.calendar_event_link,
+          l.source, l.contact_name, l.origin, l.destination, l.move_type, l.estimated_volume,
+          l.whatsapp_number,
+          c.display_name AS contact_display_name,
+          c.instagram_username AS contact_instagram_username,
+          c.phone_e164 AS contact_phone_e164
+        FROM booking_offers bo
+        JOIN leads l ON l.id = bo.lead_id
+        LEFT JOIN contacts c ON c.id = l.contact_id
+        WHERE bo.survey_starts_at IS NOT NULL
+        ORDER BY bo.lead_id, bo.survey_starts_at DESC
+      ) s
+      WHERE s.survey_starts_at >= now() - interval '1 day'
+      ORDER BY s.survey_starts_at ASC
+      LIMIT 100
+    `;
+  } catch (error: unknown) {
+    if (error && typeof error === "object" && "code" in error && (error.code === "42P01" || error.code === "42703")) {
+      return [];
+    }
+    throw error;
+  }
+}
+
+export async function getSurveyForLead(leadId: string): Promise<SurveyRow | undefined> {
+  try {
+    const result = await sql<SurveyRow[]>`
+      SELECT DISTINCT ON (bo.lead_id)
+        bo.id, bo.lead_id, bo.survey_starts_at, bo.survey_ends_at,
+        bo.calendar_status, bo.calendar_event_link,
+        l.source, l.contact_name, l.origin, l.destination, l.move_type, l.estimated_volume,
+        l.whatsapp_number,
+        c.display_name AS contact_display_name,
+        c.instagram_username AS contact_instagram_username,
+        c.phone_e164 AS contact_phone_e164
+      FROM booking_offers bo
+      JOIN leads l ON l.id = bo.lead_id
+      LEFT JOIN contacts c ON c.id = l.contact_id
+      WHERE bo.lead_id = ${leadId} AND bo.survey_starts_at IS NOT NULL
+      ORDER BY bo.lead_id, bo.survey_starts_at DESC
+      LIMIT 1
+    `;
+    return result[0];
+  } catch (error: unknown) {
+    if (error && typeof error === "object" && "code" in error && (error.code === "42P01" || error.code === "42703")) {
+      return undefined;
+    }
+    throw error;
+  }
+}

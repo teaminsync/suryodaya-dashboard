@@ -12,6 +12,7 @@ The dashboard provides:
 - Move estimation and photo/video capture review grouped by room
 - Contact history and outreach status
 - Instagram and WhatsApp lead support
+- Upcoming surveys page with booked survey times and calendar status
 
 ## Environment Variables
 

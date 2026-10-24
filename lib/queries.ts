@@ -177,3 +177,29 @@ export async function getTouchpointsForLead(leadId: string): Promise<TouchpointI
     ORDER BY received_at ASC
   `;
 }
+
+export interface AdminAlertRow {
+  id: string;
+  event_type: string;
+  channel: string;
+  status: string;
+  detail: string | null;
+  created_at: string | Date;
+}
+
+export async function getAdminAlertsForLead(leadId: string): Promise<AdminAlertRow[]> {
+  try {
+    return await sql<AdminAlertRow[]>`
+      SELECT id, event_type, channel, status, detail, created_at
+      FROM admin_notifications
+      WHERE lead_id = ${leadId}
+      ORDER BY created_at DESC
+      LIMIT 20
+    `;
+  } catch (error: unknown) {
+    if (error && typeof error === "object" && "code" in error && error.code === "42P01") {
+      return [];
+    }
+    throw error;
+  }
+}

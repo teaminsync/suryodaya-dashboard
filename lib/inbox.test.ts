@@ -85,8 +85,8 @@ test('filterLeads: match instagram_username with "@acme" vs "acme"', () => {
 
 test("filterLeads: phone digit matching with formatting", () => {
   const leads = [
-    { ...baseLead, whatsapp_number: "9999999999", contact_phone_e164: "+1-555-123-4567" },
-    { ...baseLead, whatsapp_number: "8888888888", contact_phone_e164: "+1-555-999-8888" },
+    { ...baseLead, whatsapp_number: "15551234567", contact_phone_e164: "+1-555-123-4567" },
+    { ...baseLead, whatsapp_number: "15559998888", contact_phone_e164: "+1-555-999-8888" },
   ];
   const result = filterLeads(leads, { q: "1234" });
   assert.equal(result.length, 1);
@@ -94,9 +94,59 @@ test("filterLeads: phone digit matching with formatting", () => {
 });
 
 test("filterLeads: phone digit matching requires at least 3 digits", () => {
-  const leads = [{ ...baseLead, whatsapp_number: "9999999999", contact_phone_e164: "+1-555-123-4567" }];
+  const leads = [{ ...baseLead, whatsapp_number: "15551234567", contact_phone_e164: "+1-555-123-4567" }];
   const result = filterLeads(leads, { q: "12" });
   assert.equal(result.length, 0);
+});
+
+test("filterLeads: formatted Indian phone matches whatsapp_number", () => {
+  const leads = [
+    { ...baseLead, whatsapp_number: "919876543210", contact_phone_e164: null },
+    { ...baseLead, whatsapp_number: "911234567890", contact_phone_e164: null },
+  ];
+  const result = filterLeads(leads, { q: "+91 98765 43210" });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].whatsapp_number, "919876543210");
+});
+
+test("filterLeads: formatted Indian phone matches contact_phone_e164", () => {
+  const leads = [
+    { ...baseLead, whatsapp_number: "999999999", contact_phone_e164: "+91 98765-43210" },
+    { ...baseLead, whatsapp_number: "888888888", contact_phone_e164: "+91 1234567890" },
+  ];
+  const result = filterLeads(leads, { q: "+91 98765 43210" });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].contact_phone_e164, "+91 98765-43210");
+});
+
+test("filterLeads: letters-only query never matches phone", () => {
+  const leads = [
+    { ...baseLead, whatsapp_number: "919876543210", contact_phone_e164: "+1-555-123-4567" },
+  ];
+  const result = filterLeads(leads, { q: "abcdef" });
+  assert.equal(result.length, 0);
+});
+
+test("filterLeads: escalated filter", () => {
+  const leads = [
+    { ...baseLead, escalated: true },
+    { ...baseLead, escalated: false },
+  ];
+  const result = filterLeads(leads, { escalated: true });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].escalated, true);
+});
+
+test("filterLeads: combined escalated and source filter", () => {
+  const leads = [
+    { ...baseLead, escalated: true, source: "whatsapp" },
+    { ...baseLead, escalated: true, source: "instagram" },
+    { ...baseLead, escalated: false, source: "whatsapp" },
+  ];
+  const result = filterLeads(leads, { escalated: true, source: "whatsapp" });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].escalated, true);
+  assert.equal(result[0].source, "whatsapp");
 });
 
 test("filterLeads: match origin", () => {
@@ -241,5 +291,12 @@ test("buildInboxHref: overrides clearing a value", () => {
   assert.equal(
     buildInboxHref({ awaiting: true }, { awaiting: false }),
     "/"
+  );
+});
+
+test("buildInboxHref: awaiting and escalated both true", () => {
+  assert.equal(
+    buildInboxHref({}, { awaiting: true, escalated: true }),
+    "/?awaiting=1&escalated=1"
   );
 });

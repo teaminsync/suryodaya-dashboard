@@ -17,7 +17,7 @@ The dashboard provides:
 
 Create a `.env.local` file (see `.env.local.example` for reference) with:
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` - Supabase anon/public key
 - `SUPABASE_SECRET_KEY` - Supabase service role key (server-side only)
 - `SUPABASE_STORAGE_BUCKET` - Storage bucket name (defaults to "move-media")
 - `DATABASE_URL` - Postgres connection string (read-only access)
@@ -31,12 +31,12 @@ Install dependencies:
 npm install
 ```
 
-Run the development server (default port 3001):
+Run the development server (Next.js default port 3000 unless you pass -p):
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001).
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Build and Test
 
@@ -76,7 +76,7 @@ The single admin user is created directly in Supabase (no signup page in this ap
 ## Notes
 
 - The Express project must be running for writes to work (messages, takeover, outreach actions).
-- Media captures (photos/videos) are stored in Supabase Storage; signed URLs are generated server-side with a 10-minute expiry.
+- Media captures (photos/videos) are stored in Supabase Storage; signed URLs are generated server-side with a 600-second (10-minute) expiry.
 - Real-time message updates use Supabase Realtime subscriptions.
 - Tests use Node's built-in test runner (`tsx --test`) for pure helper modules only.
 

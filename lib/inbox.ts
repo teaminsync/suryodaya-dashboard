@@ -31,12 +31,14 @@ export function filterLeads(
     source?: string;
     status?: string;
     awaiting?: boolean;
+    escalated?: boolean;
   }
 ): Lead[] {
   const q = (filters.q ?? "").trim().toLowerCase();
   const source = (filters.source ?? "").trim();
   const status = (filters.status ?? "").trim();
   const awaiting = filters.awaiting ?? false;
+  const escalated = filters.escalated ?? false;
 
   return leads.filter((lead) => {
     if (q) {
@@ -63,16 +65,16 @@ export function filterLeads(
       const digitsOnly = q.replace(/\D/g, "");
       const matchesPhone =
         digitsOnly.length >= 3 &&
-        phoneE164.replace(/\D/g, "").includes(digitsOnly);
+        (whatsappNumber.replace(/\D/g, "").includes(digitsOnly) ||
+         phoneE164.replace(/\D/g, "").includes(digitsOnly));
 
-      const matchesWhatsappNumber = whatsappNumber.includes(q);
-
-      if (!matchesText && !matchesPhone && !matchesWhatsappNumber) return false;
+      if (!matchesText && !matchesPhone) return false;
     }
 
     if (source && lead.source !== source) return false;
     if (status && lead.status !== status) return false;
     if (awaiting && !isAwaitingReply(lead)) return false;
+    if (escalated && !lead.escalated) return false;
 
     return true;
   });
@@ -103,12 +105,14 @@ export function buildInboxHref(
     source?: string;
     status?: string;
     awaiting?: boolean;
+    escalated?: boolean;
   },
   overrides: Partial<{
     q: string;
     source: string;
     status: string;
     awaiting: boolean;
+    escalated: boolean;
   }>
 ): string {
   const merged = { ...current, ...overrides };
@@ -117,6 +121,7 @@ export function buildInboxHref(
   const source = (merged.source ?? "").trim();
   const status = (merged.status ?? "").trim();
   const awaiting = merged.awaiting ?? false;
+  const escalated = merged.escalated ?? false;
 
   const params: string[] = [];
 
@@ -124,6 +129,7 @@ export function buildInboxHref(
   if (source) params.push(`source=${encodeURIComponent(source)}`);
   if (status) params.push(`status=${encodeURIComponent(status)}`);
   if (awaiting) params.push("awaiting=1");
+  if (escalated) params.push("escalated=1");
 
   return params.length > 0 ? `/?${params.join("&")}` : "/";
 }

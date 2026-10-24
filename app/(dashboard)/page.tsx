@@ -23,15 +23,17 @@ export default async function LeadsPage({
   const source = typeof params.source === "string" ? params.source : "";
   const status = typeof params.status === "string" ? params.status : "";
   const awaiting = params.awaiting === "1" || params.awaiting === "true";
+  const escalated = params.escalated === "1" || params.escalated === "true";
 
   const allLeads = await getLeads();
-  const filteredLeads = filterLeads(allLeads, { q, source, status, awaiting });
+  const filteredLeads = filterLeads(allLeads, { q, source, status, awaiting, escalated });
 
   const sourceCounts = countBy(allLeads, "source");
   const statusCounts = countBy(allLeads, "status");
   const awaitingCount = allLeads.filter((lead) => isAwaitingReply(lead)).length;
+  const escalatedCount = allLeads.filter((lead) => lead.escalated).length;
 
-  const currentFilters = { q, source, status, awaiting };
+  const currentFilters = { q, source, status, awaiting, escalated };
 
   return (
     <div>
@@ -50,6 +52,7 @@ export default async function LeadsPage({
         {source && <input type="hidden" name="source" value={source} />}
         {status && <input type="hidden" name="status" value={status} />}
         {awaiting && <input type="hidden" name="awaiting" value="1" />}
+        {escalated && <input type="hidden" name="escalated" value="1" />}
         <button
           type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -106,6 +109,16 @@ export default async function LeadsPage({
           }`}
         >
           Awaiting reply ({awaitingCount})
+        </Link>
+        <Link
+          href={buildInboxHref(currentFilters, { escalated: !escalated })}
+          className={`px-3 py-1 rounded text-sm ${
+            escalated
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          Escalated ({escalatedCount})
         </Link>
       </div>
 

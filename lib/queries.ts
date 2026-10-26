@@ -238,7 +238,7 @@ export async function getUpcomingSurveys(): Promise<SurveyRow[]> {
         FROM booking_offers bo
         JOIN leads l ON l.id = bo.lead_id
         LEFT JOIN contacts c ON c.id = l.contact_id
-        WHERE bo.survey_starts_at IS NOT NULL
+        WHERE bo.survey_starts_at IS NOT NULL AND bo.superseded_at IS NULL AND bo.calendar_status IS DISTINCT FROM 'cancelled'
         ORDER BY bo.lead_id, bo.survey_starts_at DESC
       ) s
       WHERE s.survey_starts_at >= now() - interval '1 day'
@@ -267,7 +267,7 @@ export async function getSurveyForLead(leadId: string): Promise<SurveyRow | unde
       FROM booking_offers bo
       JOIN leads l ON l.id = bo.lead_id
       LEFT JOIN contacts c ON c.id = l.contact_id
-      WHERE bo.lead_id = ${leadId} AND bo.survey_starts_at IS NOT NULL
+      WHERE bo.lead_id = ${leadId} AND bo.survey_starts_at IS NOT NULL AND bo.superseded_at IS NULL AND bo.calendar_status IS DISTINCT FROM 'cancelled'
       ORDER BY bo.lead_id, bo.survey_starts_at DESC
       LIMIT 1
     `;

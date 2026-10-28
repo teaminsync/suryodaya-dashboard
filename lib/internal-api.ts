@@ -72,3 +72,34 @@ export async function getOutreach(leadId: string): Promise<OutreachInfo | null> 
     return null;
   }
 }
+
+export interface SurveySettingsInfo {
+  ok: boolean;
+  values: Record<string, string>;
+  source: "database" | "env";
+  updatedAt: string | null;
+  updatedBy: string | null;
+  warnings: string[];
+}
+
+export async function getSurveySettings(): Promise<SurveySettingsInfo | null> {
+  const baseUrl = process.env.EXPRESS_INTERNAL_API_URL!;
+  const secret = process.env.INTERNAL_API_SECRET!;
+
+  try {
+    const response = await fetch(`${baseUrl}/internal/survey-settings`, {
+      headers: { "X-Internal-Secret": secret },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("[InternalAPI] Survey settings fetch failed:", response.status);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("[InternalAPI] Survey settings request failed:", error instanceof Error ? error.message : String(error));
+    return null;
+  }
+}

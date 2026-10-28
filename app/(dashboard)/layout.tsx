@@ -30,6 +30,9 @@ export default async function DashboardLayout({
             <Link href="/surveys" className="text-sm text-gray-700 hover:text-blue-600">
               Surveys
             </Link>
+            <Link href="/settings" className="text-sm text-gray-700 hover:text-blue-600">
+              Settings
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">

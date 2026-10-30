@@ -1,6 +1,6 @@
 import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, getAdminAlertsForLead, getSurveyForLead, type EnquirySummary } from "@/lib/queries";
 import { createSignedUrl } from "@/lib/storage";
-import { getMoveQuote, getOutreach } from "@/lib/internal-api";
+import { getMoveQuote, getOutreach, getLeadAutomation } from "@/lib/internal-api";
 import { contactLabel } from "@/lib/contact-label";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +13,7 @@ import { InstagramNote } from "@/components/instagram-note";
 import { CaptureGroups } from "@/components/capture-groups";
 import { AdminAlerts } from "@/components/admin-alerts";
 import { SurveyCard } from "@/components/survey-card";
+import { AutomationPanel } from "@/components/automation-panel";
 
 export default async function LeadDetailPage({
   params,
@@ -36,7 +37,7 @@ export default async function LeadDetailPage({
     ]);
   }
 
-  const [captures, quote, outreach, messages, touchpoints, alerts, survey] = await Promise.all([
+  const [captures, quote, outreach, messages, touchpoints, alerts, survey, automation] = await Promise.all([
     getMediaCapturesForLead(id),
     getMoveQuote(id),
     lead.source === "instagram" ? Promise.resolve(null) : getOutreach(id),
@@ -44,6 +45,7 @@ export default async function LeadDetailPage({
     getTouchpointsForLead(id),
     getAdminAlertsForLead(id),
     getSurveyForLead(id),
+    getLeadAutomation(id),
   ]);
 
   let instagramWindowOpen = false;
@@ -192,6 +194,19 @@ export default async function LeadDetailPage({
             })),
           } : null}
         />
+      )}
+
+      {automation === null ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Automated messages</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-500">Automation status is unavailable right now.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <AutomationPanel leadId={id} initial={automation} />
       )}
 
       <ChatPanel

@@ -103,3 +103,54 @@ export async function getSurveySettings(): Promise<SurveySettingsInfo | null> {
     return null;
   }
 }
+
+export interface AutomationUpcoming {
+  kind: string;
+  ref: string;
+  label: string;
+  dueAt: string;
+  expiresAt: string;
+}
+
+export interface AutomationHistoryRow {
+  id: string;
+  kind: string;
+  label: string;
+  status: string;
+  reason: string | null;
+  channel: string | null;
+  templateName: string | null;
+  dueAt: string;
+  processedAt: string | null;
+}
+
+export interface AutomationInfo {
+  ok: boolean;
+  enabled: boolean;
+  dryRun: boolean;
+  upcoming: AutomationUpcoming[];
+  history: AutomationHistoryRow[];
+}
+
+export async function getLeadAutomation(leadId: string): Promise<AutomationInfo | null> {
+  const baseUrl = process.env.EXPRESS_INTERNAL_API_URL!;
+  const secret = process.env.INTERNAL_API_SECRET!;
+
+  try {
+    const response = await fetch(`${baseUrl}/internal/leads/${leadId}/automation`, {
+      headers: { "X-Internal-Secret": secret },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("[InternalAPI] Automation fetch failed:", response.status);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("[InternalAPI] Automation request failed:", error instanceof Error ? error.message : String(error));
+    return null;
+  }
+}
+

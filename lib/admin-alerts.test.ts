@@ -81,3 +81,7 @@ test("alertStatusTone: null", () => {
 test("alertStatusTone: undefined", () => {
   assert.equal(alertStatusTone(undefined), "neutral");
 });
+
+test("alertEventLabel: calendar_failed", () => {
+  assert.equal(alertEventLabel("calendar_failed"), "Survey booked, calendar not updated");
+});

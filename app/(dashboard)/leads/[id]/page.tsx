@@ -1,4 +1,4 @@
-import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, getAdminAlertsForLead, getSurveyForLead, type EnquirySummary } from "@/lib/queries";
+import { getLeadById, getMediaCapturesForLead, getMessagesForLead, getContactById, getEnquiriesForContact, getTouchpointsForLead, getAdminAlertsForLead, getSurveyForLead, getDeliveryFailuresForLead, type EnquirySummary } from "@/lib/queries";
 import { createSignedUrl } from "@/lib/storage";
 import { getMoveQuote, getOutreach, getLeadAutomation } from "@/lib/internal-api";
 import { contactLabel } from "@/lib/contact-label";
@@ -14,6 +14,7 @@ import { CaptureGroups } from "@/components/capture-groups";
 import { AdminAlerts } from "@/components/admin-alerts";
 import { SurveyCard } from "@/components/survey-card";
 import { AutomationPanel } from "@/components/automation-panel";
+import { DeliveryFailures } from "@/components/delivery-failures";
 
 export default async function LeadDetailPage({
   params,
@@ -37,7 +38,7 @@ export default async function LeadDetailPage({
     ]);
   }
 
-  const [captures, quote, outreach, messages, touchpoints, alerts, survey, automation] = await Promise.all([
+  const [captures, quote, outreach, messages, touchpoints, alerts, survey, automation, deliveryFailures] = await Promise.all([
     getMediaCapturesForLead(id),
     getMoveQuote(id),
     lead.source === "instagram" ? Promise.resolve(null) : getOutreach(id),
@@ -46,6 +47,7 @@ export default async function LeadDetailPage({
     getAdminAlertsForLead(id),
     getSurveyForLead(id),
     getLeadAutomation(id),
+    getDeliveryFailuresForLead(id),
   ]);
 
   let instagramWindowOpen = false;
@@ -195,6 +197,8 @@ export default async function LeadDetailPage({
           } : null}
         />
       )}
+
+      {deliveryFailures.length > 0 && <DeliveryFailures failures={deliveryFailures} />}
 
       {automation === null ? (
         <Card>

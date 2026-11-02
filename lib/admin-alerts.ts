@@ -4,6 +4,8 @@ export function alertEventLabel(type: string | null | undefined): string {
   switch (type) {
     case "booking_confirmed":
       return "Survey booked";
+    case "calendar_failed":
+      return "Survey booked, calendar not updated";
     case "human_requested":
       return "Customer wants a human";
     case "needs_followup":

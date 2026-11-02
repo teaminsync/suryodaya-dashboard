@@ -279,3 +279,32 @@ export async function getSurveyForLead(leadId: string): Promise<SurveyRow | unde
     throw error;
   }
 }
+
+export interface DeliveryFailure {
+  wamid: string;
+  code: string;
+  title: string | null;
+  detail: string | null;
+  failedAt: string | null;
+}
+
+export async function getDeliveryFailuresForLead(leadId: string): Promise<DeliveryFailure[]> {
+  try {
+    return await sql<DeliveryFailure[]>`
+      SELECT de.wamid, de.error_code AS code, de.error_title AS title, de.error_detail AS detail, de.failed_at AS "failedAt"
+      FROM delivery_events de
+      JOIN leads l ON l.id = ${leadId}
+      JOIN contacts c ON c.id = l.contact_id
+      WHERE c.phone_e164 IS NOT NULL
+        AND regexp_replace(c.phone_e164, '\\D', '', 'g') = de.recipient
+        AND coalesce(de.failed_at, de.created_at) >= now() - interval '14 days'
+      ORDER BY coalesce(de.failed_at, de.created_at) DESC
+      LIMIT 10
+    `;
+  } catch (error: unknown) {
+    if (error && typeof error === "object" && "code" in error && error.code === "42P01") {
+      return [];
+    }
+    throw error;
+  }
+}

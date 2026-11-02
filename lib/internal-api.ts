@@ -154,3 +154,37 @@ export async function getLeadAutomation(leadId: string): Promise<AutomationInfo 
   }
 }
 
+
+export interface InstagramTokenStatus {
+  ok: boolean;
+  configured: boolean;
+  source: "database" | "env";
+  level: "unknown" | "ok" | "warning" | "critical" | "expired";
+  daysLeft: number | null;
+  expiresAt: string | null;
+  refreshedAt: string | null;
+  lastAttemptAt: string | null;
+  lastError: string | null;
+}
+
+export async function getInstagramTokenStatus(): Promise<InstagramTokenStatus | null> {
+  const baseUrl = process.env.EXPRESS_INTERNAL_API_URL!;
+  const secret = process.env.INTERNAL_API_SECRET!;
+
+  try {
+    const response = await fetch(`${baseUrl}/internal/integrations/instagram`, {
+      headers: { "X-Internal-Secret": secret },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("[InternalAPI] Instagram token status fetch failed:", response.status);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("[InternalAPI] Instagram token status request failed:", error instanceof Error ? error.message : String(error));
+    return null;
+  }
+}

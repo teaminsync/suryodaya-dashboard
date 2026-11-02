@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { signOut } from "../actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { getInstagramTokenStatus } from "@/lib/internal-api";
+import { shouldShowBanner, bannerText } from "@/lib/instagram-token";
 
 export default async function DashboardLayout({
   children,
@@ -17,6 +19,17 @@ export default async function DashboardLayout({
   if (!user) {
     redirect("/login");
   }
+
+  let instagramStatus = null;
+  try {
+    instagramStatus = await getInstagramTokenStatus();
+  } catch {
+    // Ignore fetch errors for banner display
+  }
+
+  const showBanner = shouldShowBanner(instagramStatus);
+  const bannerMessage = showBanner && instagramStatus ? bannerText(instagramStatus) : "";
+  const bannerColor = instagramStatus?.level === "expired" || instagramStatus?.level === "critical" ? "bg-red-100 border-red-300 text-red-900" : "bg-amber-100 border-amber-300 text-amber-900";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,6 +57,16 @@ export default async function DashboardLayout({
           </form>
         </div>
       </header>
+      {showBanner && (
+        <div className={`px-6 py-3 border-b ${bannerColor}`}>
+          <p className="text-sm">
+            {bannerMessage}{" "}
+            <Link href="/settings" className="underline font-medium">
+              Go to Settings
+            </Link>
+          </p>
+        </div>
+      )}
       <main className="p-6">{children}</main>
     </div>
   );
